@@ -1,0 +1,74 @@
+#!/usr/bin/env ruby
+require "optparse"
+load 'PullReqs.rb'
+
+options = {
+	:conservative => false,
+	:verbose => false
+}
+OptionParser.new do |opts|
+	opts.banner = "Usage: review [options] [repositories]"
+	
+	opts.on("-c", "--conservative", "Run in Conservative mode") do |c|
+		options[:conservative] = c
+	end
+	
+	opts.on("-v", "--verbose", "Output verbose info about why each pull request is or is not interesting.") do |v|
+		options[:verbose] = v
+	end
+	
+	opts.on_tail("-h", "--help", "Show this message") do
+		puts opts
+		exit
+	end
+end.parse!
+
+#p options
+#p ARGV
+
+def printRepoInfo(pullReqs, verbose, prefix)
+	if pullReqs.empty? then
+		puts [prefix, "There are no open pull requests."].join
+		return
+	end
+	pullReqs.each do |req|
+		puts [prefix ,req.url, req.interesting ? "interesting" : "not interesting"].join(" - ")
+		#If verbose is on, and the request was an interesting one, also print a list of changed files.
+		if verbose and req.interesting then
+			req.files.each do |file|
+				if file.interesting then
+					puts [prefix, "\t", "File #{file.filename} is interesting because:"].join
+					file.reasons.each do |reason|
+						puts [prefix, "\t\t","#{reason}"].join
+					end
+				end
+			end
+		end
+	end
+end
+
+begin
+	#if no repos are provided, then display an error and exit.
+	if ARGV.count == 0 then
+		puts "You need to supply a repository to check, e.g. puppetlabs/puppet"
+		exit
+	end
+	#if there is one repo, just display its output without additional text. If there are multiple repos, then display each with a line indicating which repo they're from.
+	if ARGV.count == 1 then
+		pullReqs = fetchPullRequests(ARGV[0], options[:conservative])
+		#print each request and whether it's interesting.
+		printRepoInfo(pullReqs, options[:verbose], "")
+	else
+		repos = []
+		ARGV.each do |repository|
+			repos << fetchPullRequests(repository, options[:conservative])
+		end
+		repos.each do |repo|
+			puts "Pull requests for repository #{repository}:"
+			printRepoInfo(repo, options[:verbose], "\t")
+		end
+	end
+rescue Exception => e
+	puts "Something seems to be wrong:"
+	puts e.message
+end

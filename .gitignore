@@ -12,6 +12,13 @@ test/tmp
 test/version_tmp
 tmp
 
+# Experiments that aren't part of codebase:
+*.data
+OctoTest.rb
+
+#EMACS temp files
+*~
+
 # YARD artifacts
 .yardoc
 _yardoc
