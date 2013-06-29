@@ -59,13 +59,10 @@ begin
 		#print each request and whether it's interesting.
 		printRepoInfo(pullReqs, options[:verbose], "")
 	else
-		repos = []
 		ARGV.each do |repository|
-			repos << fetchPullRequests(repository, options[:conservative])
-		end
-		repos.each do |repo|
+			pullReqs = fetchPullRequests(repository, options[:conservative])
 			puts "Pull requests for repository #{repository}:"
-			printRepoInfo(repo, options[:verbose], "\t")
+			printRepoInfo(pullReqs, options[:verbose], "\t")
 		end
 	end
 rescue Exception => e
